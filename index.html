@@ -7,12 +7,12 @@
     body {
         margin: 0;
         overflow: hidden;
-        background: #111;
+        background: #000;
     }
     canvas {
         display: block;
         margin: auto;
-        background: #333;
+        background: #222;
     }
 </style>
 </head>
@@ -24,7 +24,14 @@
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 
-// IMÁGENES (sprites)
+// 🔊 SONIDOS
+const engineSound = new Audio("https://www.soundjay.com/transportation/car-engine-1.mp3");
+engineSound.loop = true;
+engineSound.volume = 0.3;
+
+const crashSound = new Audio("https://www.soundjay.com/transportation/car-crash-1.mp3");
+
+// 🚗 IMÁGENES
 const playerImg = new Image();
 playerImg.src = "https://i.imgur.com/7Qp6F4B.png";
 
@@ -32,42 +39,41 @@ const enemyImg = new Image();
 enemyImg.src = "https://i.imgur.com/Z6XKQwK.png";
 
 // jugador
-let player = {
-    x: 180,
-    y: 480,
-    width: 40,
-    height: 80,
-    speed: 6
-};
-
+let player = { x: 180, y: 480, width: 40, height: 80, speed: 6 };
 let enemies = [];
 let score = 0;
 let gameOver = false;
+let roadOffset = 0;
 
 // controles
 let keys = {};
-document.addEventListener("keydown", e => keys[e.key] = true);
+document.addEventListener("keydown", e => {
+    keys[e.key] = true;
+    engineSound.play();
+});
 document.addEventListener("keyup", e => keys[e.key] = false);
 
-// crear enemigos
+// enemigos
 function spawnEnemy() {
     let x = Math.random() * (canvas.width - 40);
     enemies.push({ x: x, y: -80, width: 40, height: 80 });
 }
 
-// dibujar carretera
+// 🛣️ carretera animada
 function drawRoad() {
-    ctx.fillStyle = "#444";
+    ctx.fillStyle = "#333";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     ctx.strokeStyle = "white";
     ctx.lineWidth = 4;
     ctx.setLineDash([20, 20]);
 
-    for (let i = -20; i < canvas.height; i += 40) {
+    roadOffset += 5;
+
+    for (let i = -40; i < canvas.height; i += 40) {
         ctx.beginPath();
-        ctx.moveTo(canvas.width / 2, i);
-        ctx.lineTo(canvas.width / 2, i + 20);
+        ctx.moveTo(canvas.width / 2, i + roadOffset % 40);
+        ctx.lineTo(canvas.width / 2, i + 20 + roadOffset % 40);
         ctx.stroke();
     }
 
@@ -82,7 +88,7 @@ function update() {
     if (keys["ArrowRight"] && player.x < canvas.width - player.width) player.x += player.speed;
 
     enemies.forEach((enemy, index) => {
-        enemy.y += 5;
+        enemy.y += 6;
 
         // colisión
         if (
@@ -92,6 +98,8 @@ function update() {
             player.y + player.height > enemy.y
         ) {
             gameOver = true;
+            crashSound.play();
+            engineSound.pause();
         }
 
         if (enemy.y > canvas.height) {
@@ -105,15 +113,12 @@ function update() {
 function draw() {
     drawRoad();
 
-    // jugador
     ctx.drawImage(playerImg, player.x, player.y, player.width, player.height);
 
-    // enemigos
     enemies.forEach(enemy => {
         ctx.drawImage(enemyImg, enemy.x, enemy.y, enemy.width, enemy.height);
     });
 
-    // puntaje
     ctx.fillStyle = "white";
     ctx.font = "20px Arial";
     ctx.fillText("Puntos: " + score, 10, 30);
@@ -132,7 +137,7 @@ function gameLoop() {
     requestAnimationFrame(gameLoop);
 }
 
-setInterval(spawnEnemy, 1200);
+setInterval(spawnEnemy, 1000);
 gameLoop();
 </script>
 
