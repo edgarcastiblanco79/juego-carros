@@ -6,34 +6,35 @@
 <title>Juego PRO Carros</title>
 
 <style>
-    body {
-        margin: 0;
-        overflow: hidden;
-        background: black;
-    }
+body {
+    margin: 0;
+    overflow: hidden;
+    background: black;
+}
 
-    canvas {
-        display: block;
-        margin: auto;
-        background: #222;
-    }
+canvas {
+    display: block;
+    margin: auto;
+    background: #222;
+}
 
-    .controls {
-        position: fixed;
-        bottom: 20px;
-        width: 100%;
-        display: flex;
-        justify-content: space-around;
-    }
+/* botones celular */
+.controls {
+    position: fixed;
+    bottom: 20px;
+    width: 100%;
+    display: flex;
+    justify-content: space-around;
+}
 
-    button {
-        font-size: 25px;
-        padding: 15px 25px;
-        border: none;
-        border-radius: 10px;
-        background: #00c3ff;
-        color: white;
-    }
+button {
+    font-size: 25px;
+    padding: 15px 25px;
+    border: none;
+    border-radius: 10px;
+    background: #00c3ff;
+    color: white;
+}
 </style>
 </head>
 <body>
@@ -41,8 +42,8 @@
 <canvas id="gameCanvas"></canvas>
 
 <div class="controls">
-    <button ontouchstart="moveLeft()" ontouchend="stopMove()">⬅️</button>
-    <button ontouchstart="moveRight()" ontouchend="stopMove()">➡️</button>
+    <button id="leftBtn">⬅️</button>
+    <button id="rightBtn">➡️</button>
 </div>
 
 <script>
@@ -53,23 +54,60 @@ const ctx = canvas.getContext("2d");
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 
-let player = { x: canvas.width/2 - 20, y: canvas.height - 120, width: 40, height: 80 };
+// 🚗 jugador
+let player = {
+    x: canvas.width/2 - 20,
+    y: canvas.height - 120,
+    width: 40,
+    height: 80
+};
+
 let enemies = [];
 let score = 0;
 let gameOver = false;
 let move = 0;
 let roadOffset = 0;
 
-// sonidos
+// 🔊 sonidos
 const engine = new Audio("https://www.soundjay.com/transportation/car-engine-1.mp3");
 engine.loop = true;
 
 const crash = new Audio("https://www.soundjay.com/transportation/car-crash-1.mp3");
 
-// controles táctiles
-function moveLeft(){ move = -6; engine.play().catch(()=>{}); }
-function moveRight(){ move = 6; engine.play().catch(()=>{}); }
-function stopMove(){ move = 0; }
+// 📱 botones táctiles
+const leftBtn = document.getElementById("leftBtn");
+const rightBtn = document.getElementById("rightBtn");
+
+leftBtn.addEventListener("touchstart", () => { move = -6; engine.play().catch(()=>{}); });
+leftBtn.addEventListener("touchend", () => { move = 0; });
+
+rightBtn.addEventListener("touchstart", () => { move = 6; engine.play().catch(()=>{}); });
+rightBtn.addEventListener("touchend", () => { move = 0; });
+
+// 💻 mouse (por si pruebas en PC)
+leftBtn.addEventListener("mousedown", () => move = -6);
+leftBtn.addEventListener("mouseup", () => move = 0);
+
+rightBtn.addEventListener("mousedown", () => move = 6);
+rightBtn.addEventListener("mouseup", () => move = 0);
+
+// ⌨️ teclado PC
+document.addEventListener("keydown", (e) => {
+    if (e.key === "ArrowLeft") {
+        move = -6;
+        engine.play().catch(()=>{});
+    }
+    if (e.key === "ArrowRight") {
+        move = 6;
+        engine.play().catch(()=>{});
+    }
+});
+
+document.addEventListener("keyup", (e) => {
+    if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
+        move = 0;
+    }
+});
 
 // enemigos
 function spawnEnemy(){
@@ -112,18 +150,20 @@ function drawCar(x,y,color){
     ctx.fillRect(x+25,y+60,10,15);
 }
 
-// update
+// lógica
 function update(){
     if(gameOver) return;
 
     player.x += move;
 
+    // límites
     if(player.x < 0) player.x = 0;
     if(player.x > canvas.width-40) player.x = canvas.width-40;
 
     enemies.forEach((e,i)=>{
         e.y += 6;
 
+        // colisión
         if(
             player.x < e.x+40 &&
             player.x+40 > e.x &&
@@ -142,7 +182,7 @@ function update(){
     });
 }
 
-// draw
+// dibujar
 function draw(){
     drawRoad();
 
@@ -150,6 +190,7 @@ function draw(){
     enemies.forEach(e=>drawCar(e.x,e.y,"red"));
 
     ctx.fillStyle="white";
+    ctx.font="20px Arial";
     ctx.fillText("Puntos: "+score,20,30);
 
     if(gameOver){
